@@ -9,7 +9,7 @@ M.presets = {
     outline = false,
     project = false,
     ufo = false,
-    alpha = false,
+    alpha = true,
     statuscol = false,
   },
   ["Full-IDE"] = {
@@ -18,7 +18,7 @@ M.presets = {
     outline = true,
     project = true,
     ufo = true,
-    alpha = false,
+    alpha = true,
     statuscol = false,
   },
   ["Writing"] = {
@@ -27,7 +27,7 @@ M.presets = {
     outline = true,
     project = false,
     ufo = false,
-    alpha = false,
+    alpha = true,
     explorer = "neo-tree",
   },
 }

@@ -1,5 +1,9 @@
 vim.loader.enable()
 
+if not vim.uv and vim.loop then
+  vim.uv = vim.loop
+end
+
 vim.g.mapleader = " "
 vim.g.maplocalleader = ","
 

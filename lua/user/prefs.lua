@@ -1,3 +1,21 @@
+local fs = vim.fs or {}
+
+local function joinpath(...)
+  local join = fs.joinpath
+  if join then
+    return join(...)
+  end
+  local parts = { ... }
+  return table.concat(parts, "/")
+end
+
+local function dirname(path)
+  if fs.dirname then
+    return fs.dirname(path)
+  end
+  return path:match("(.+)/[^/]+$")
+end
+
 local defaults = {
   theme = "catppuccin",
   profile = "Full-IDE",
@@ -6,7 +24,7 @@ local defaults = {
   outline = true,
   tests = true,
   ai = false,
-  alpha = false,
+  alpha = true,
   project = true,
   ufo = true,
   statuscol = false,
@@ -22,7 +40,7 @@ local defaults = {
 }
 
 local function persist_path()
-  return vim.fs.joinpath(vim.fn.stdpath("config"), "lua", "user", "prefs.local.lua")
+  return joinpath(vim.fn.stdpath("config"), "lua", "user", "prefs.local.lua")
 end
 
 local function load_persisted()
@@ -79,7 +97,7 @@ end
 function M.write(values)
   values = values or M.values
   local path = persist_path()
-  local dir = vim.fs.dirname(path)
+  local dir = dirname(path)
   if dir then
     vim.fn.mkdir(dir, "p")
   end
