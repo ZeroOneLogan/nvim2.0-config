@@ -1,9 +1,11 @@
--- nvim2.0-config: Main entry point
--- Bootstraps lazy.nvim and loads the configuration modules.
+vim.loader.enable()
+
+vim.g.mapleader = " "
+vim.g.maplocalleader = ","
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
-  vim.notify("Installing lazy.nvim – sit tight...", vim.log.levels.INFO)
+if not vim.uv.fs_stat(lazypath) then
+  vim.notify("Installing lazy.nvim…", vim.log.levels.INFO)
   vim.fn.system({
     "git",
     "clone",
@@ -16,30 +18,31 @@ end
 
 vim.opt.rtp:prepend(lazypath)
 
--- Load core settings first so plugins inherit sensible defaults
-require("core.options")
-require("core.keymaps")
-require("core.autocmds")
+local prefs = require("user.prefs")
+require("user.profile").apply_startup(prefs.values.profile)
 
-require("lazy").setup({
-  spec = require("core.util").lazy_spec(),
+require("user.options").setup()
+require("user.autocmds").setup()
+
+require("lazy").setup("plugins", {
   defaults = { lazy = true, version = false },
   install = { colorscheme = { "catppuccin", "tokyonight", "habamax" } },
-  checker = { enabled = false },
   change_detection = { notify = false },
+  checker = { enabled = false },
   performance = {
     rtp = {
       disabled_plugins = {
         "gzip",
-        "netrwPlugin",
         "tarPlugin",
         "tohtml",
         "tutor",
         "zipPlugin",
+        "netrwPlugin",
       },
     },
   },
 })
 
--- Set the default theme after plugins are setup
+require("user.keymaps").setup()
+require("user.commands").setup()
 require("ui.theme").load()

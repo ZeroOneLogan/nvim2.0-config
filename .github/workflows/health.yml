@@ -1,0 +1,46 @@
+name: health
+
+on:
+  push:
+    branches: ["main", "refine/*"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Neovim data
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/nvim
+            ~/.cache/nvim
+          key: nvim-${{ runner.os }}-${{ hashFiles('lazy-lock.json') }}
+
+      - name: Install Neovim 0.11.4
+        run: |
+          curl -L https://github.com/neovim/neovim/releases/download/v0.11.4/nvim-linux64.tar.gz -o nvim-linux64.tar.gz
+          sudo tar xzf nvim-linux64.tar.gz -C /usr/local --strip-components=1
+
+      - name: Verify version
+        run: nvim --version
+
+      - name: Headless bootstrap
+        run: |
+          nvim --headless "+lua print('BOOT')" +qa
+          nvim --headless "+lua require('lazy').sync()" +qa
+          nvim --headless "+MasonUpdate" +qa
+          nvim --headless "+checkhealth" +qa
+
+      - name: Capture startup time
+        run: nvim --startuptime /tmp/nvim.startup.txt -c qa
+
+      - name: Upload startup profile
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvim-startup
+          path: /tmp/nvim.startup.txt

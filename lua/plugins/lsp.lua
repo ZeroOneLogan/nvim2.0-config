@@ -1,63 +1,86 @@
 return {
   {
     "williamboman/mason.nvim",
-    cmd = "Mason",
     build = ":MasonUpdate",
+    cmd = { "Mason", "MasonInstall", "MasonUninstall", "MasonLog", "MasonUpdate" },
     opts = {
       ui = {
         border = "rounded",
+        icons = {
+          package_installed = "✓",
+          package_pending = "➜",
+          package_uninstalled = "✗",
+        },
       },
     },
   },
   {
     "williamboman/mason-lspconfig.nvim",
-    lazy = true,
+    dependencies = { "williamboman/mason.nvim" },
   },
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
-    lazy = true,
+    event = "VeryLazy",
+    opts = {
+      ensure_installed = {
+        "bash-language-server",
+        "clangd",
+        "clang-format",
+        "css-lsp",
+        "dockerfile-language-server",
+        "eslint-lsp",
+        "gopls",
+        "goimports",
+        "gofumpt",
+        "html-lsp",
+        "intelephense",
+        "jdtls",
+        "json-lsp",
+        "kotlin-language-server",
+        "lua-language-server",
+        "marksman",
+        "pyright",
+        "ruff-lsp",
+        "ruff",
+        "rust-analyzer",
+        "tailwindcss-language-server",
+        "taplo",
+        "terraform-ls",
+        "typescript-language-server",
+        "yaml-language-server",
+        "yamllint",
+        "yamlfmt",
+        "stylua",
+        "black",
+        "isort",
+        "prettierd",
+        "biome",
+        "shfmt",
+        "shellcheck",
+        "markdownlint",
+        "debugpy",
+        "js-debug-adapter",
+        "delve",
+        "codelldb",
+      },
+    },
   },
   {
     "neovim/nvim-lspconfig",
-    event = { "BufReadPre", "BufNewFile" },
+    event = { "BufReadPost", "BufNewFile" },
     dependencies = {
       "williamboman/mason.nvim",
       "williamboman/mason-lspconfig.nvim",
-      "WhoIsSethDaniel/mason-tool-installer.nvim",
+      "folke/neodev.nvim",
       "b0o/schemastore.nvim",
-      { "folke/neodev.nvim", opts = {} },
-      { "j-hui/fidget.nvim", opts = {} },
-      { "simrat39/rust-tools.nvim", lazy = true },
     },
     config = function()
       require("lsp").setup()
     end,
   },
   {
-    "mfussenegger/nvim-jdtls",
-    ft = { "java" },
-    config = function()
-      local ok, jdtls = pcall(require, "jdtls")
-      if not ok then return end
-      local root = vim.fs.dirname(vim.fs.find({ "gradlew", "mvnw", ".git" }, { upward = true })[1])
-      if not root then return end
-      local workspace_dir = vim.fn.stdpath("data") .. "/jdtls/workspace/" .. vim.fn.fnamemodify(root, ":p:h:t")
-      local lombok = vim.fn.glob(vim.fn.expand("$JAVA_HOME/lib/lombok.jar"))
-      local cmd = { "jdtls", "-data", workspace_dir }
-      if lombok ~= "" then
-        table.insert(cmd, "--jvm-arg=-javaagent:" .. lombok)
-      end
-      local config = {
-        cmd = cmd,
-        root_dir = root,
-        settings = {
-          java = {
-            configuration = { updateBuildConfiguration = "interactive" },
-          },
-        },
-        init_options = { bundles = {} },
-      }
-      jdtls.start_or_attach(config)
-    end,
+    "folke/neodev.nvim",
+    ft = { "lua" },
+    opts = {},
   },
 }
