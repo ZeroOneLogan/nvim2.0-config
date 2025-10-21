@@ -111,7 +111,8 @@ local function analyze_and_install(registry)
   local missing = {}
   for _, spec in ipairs(detected) do
     for _, pkg in ipairs(spec.packages) do
-      if not registry.is_installed(pkg) then
+      local ok, package = pcall(registry.get_package, registry, pkg)
+      if not ok or not package:is_installed() then
         table.insert(missing, pkg)
       end
     end
