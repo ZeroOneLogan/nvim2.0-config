@@ -328,6 +328,10 @@ return {
       end
 
       local function patch_plugin_modules()
+        if vim.uv == nil and vim.loop ~= nil then
+          vim.uv = vim.loop
+        end
+
         local ok_color, color = pcall(require, "smear_cursor.color")
         if ok_color and type(color) == "table" and not color._nvim2_safe_colors then
           color._nvim2_safe_colors = true
