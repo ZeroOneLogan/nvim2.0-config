@@ -21,8 +21,13 @@ return {
         { "<leader>d", group = "debug" },
         { "<leader>f", group = "find" },
         { "<leader>g", group = "git" },
+        { "<leader>b", group = "buffers" },
+        { "<leader>s", group = "search" },
         { "<leader>t", group = "test" },
         { "<leader>u", group = "ui" },
+        { "<leader>w", group = "windows" },
+        { "<leader>F", group = "flutter" },
+        { "<leader>?", group = "which-key" },
         { "<leader>x", group = "diagnostics" },
       })
     end,

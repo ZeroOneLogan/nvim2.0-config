@@ -43,4 +43,43 @@ return {
     ft = { "lua" },
     opts = {},
   },
+  {
+    "akinsho/flutter-tools.nvim",
+    ft = { "dart" },
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "stevearc/dressing.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+    opts = function()
+      local lsp = require("lsp")
+      local capabilities = vim.lsp.protocol.make_client_capabilities()
+      local ok, cmp = pcall(require, "cmp_nvim_lsp")
+      if ok then
+        capabilities = cmp.default_capabilities(capabilities)
+      end
+      return {
+        ui = { border = "rounded" },
+        decorations = { statusline = { app_version = true, device = true } },
+        widget_guides = { enabled = true },
+        dev_tools = {
+          autostart = false,
+          auto_open_browser = false,
+        },
+        lsp = {
+          on_attach = lsp.on_attach,
+          capabilities = capabilities,
+          settings = {
+            dart = {
+              completeFunctionCalls = true,
+              showTodos = true,
+            },
+          },
+        },
+      }
+    end,
+    config = function(_, opts)
+      require("flutter-tools").setup(opts)
+    end,
+  },
 }
