@@ -28,8 +28,9 @@ return {
     "jay-babu/mason-nvim-dap.nvim",
     enabled = enabled,
     opts = {
-      ensure_installed = { "python", "js", "go" },
+      ensure_installed = { "python", "js" },
       handlers = {},
+      automatic_installation = false,
     },
   },
 }

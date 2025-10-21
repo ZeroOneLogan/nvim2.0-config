@@ -32,7 +32,21 @@ Personalized all-in-one Neovim configuration targeting Neovim **0.11.4**. The go
 | Terminal      | toggleterm with floating terminals, OSC52 remote clipboard integration |
 | Sessions      | persistence.nvim for last-session restore, project.nvim for root switching |
 | Writing Mode  | Zen-mode, Twilight, markdown ergonomics |
-| Utilities     | Which-key groups, :Nvim2Setup onboarding, :Nvim2Doctor health checks, :Nvim2Profile profile switcher |
+| Utilities     | Which-key groups, :Nvim2Setup onboarding, :Nvim2Doctor tooling summary, :Nvim2Profile profile switcher |
+
+## Healthcheck & Fixes
+
+This release targets Neovim **0.11.4** with a clean bill of health:
+
+* ✅ `:checkhealth` finishes with zero errors and only informational warnings.
+* Conform.nvim now uses ordered formatter fallbacks with single-notice reporting when tools are missing, plus Mason installs driven by detected CLIs.
+* DAP bootstrap guards against missing adapters and ships Python/Node stubs so healthcheck no longer fails before installing packages.
+* Lazy.nvim LuaRocks integration is disabled to silence redundant health warnings.
+* Noice overrides LSP markdown rendering for hover/signature windows, matching upstream health expectations.
+* Diagnostic signs use the modern `vim.diagnostic.config()` API (forward-compatible with 0.12).
+* which-key v3 configuration adopts the new trigger/group syntax and resolves `<leader>` conflicts.
+* Providers can be enabled per-host via `prefs.providers`, avoiding startup noise when Python/Ruby shims are absent.
+* `:Nvim2Doctor` aggregates provider/formatter/DAP status with actionable install commands.
 
 ## Profiles & Preferences
 
@@ -56,6 +70,12 @@ Default preference table:
   transparency = 0,
   diagnostics_virtual_text = true,
   format_on_save = true,
+  providers = {
+    python = false,
+    ruby = false,
+    python_host = nil,
+    ruby_host = nil,
+  },
 }
 ```
 
@@ -79,6 +99,23 @@ Switch profiles via `:Nvim2Profile` (interactive prompt) or editing `prefs.local
 * `project`: toggles project.nvim and Telescope projects extension.
 * `ufo`: enables advanced folds via nvim-ufo.
 * `format_on_save`: integrates with conform.nvim for full-buffer formatting (per-language toolchain configured in [`lua/lsp/formatting.lua`](lua/lsp/formatting.lua)).
+* `providers`: table controlling legacy remote plugins—set `providers.python = true` (and optionally `python_host = "/path/to/python"`) or `providers.ruby = true` when you have the host shims installed.
+
+#### Language providers
+
+Remote plugin hosts are noisy when the binaries are missing, so they are disabled by default. To enable Python (pynvim) or Ruby providers, add overrides in `prefs.local.lua` such as:
+
+```lua
+return {
+  providers = {
+    python = true,
+    python_host = "/usr/bin/python3",
+    ruby = true,
+  },
+}
+```
+
+`:Nvim2Doctor` will confirm whether the configured hosts are executable.
 
 ## Keymaps Cheat Sheet
 
@@ -93,7 +130,7 @@ Invoke `:Nvim2Keys` anytime or use the table below as a quick reference. Leader 
 | `<leader>e`  | Normal | Toggle file explorer |
 | `<leader>o`  | Normal | Toggle Aerial outline |
 | `<leader>xx` | Normal | Toggle Trouble diagnostics list |
-| `<leader>q`  | Normal | Populate loclist with diagnostics |
+| `<leader>xq` | Normal | Send diagnostics to loclist |
 | `[d` / `]d` | Normal | Previous/next diagnostic |
 | `gd` / `gD` | Normal | LSP definition / declaration |
 | `gr` / `gi` | Normal | LSP references / implementation |
@@ -119,7 +156,7 @@ Invoke `:Nvim2Keys` anytime or use the table below as a quick reference. Leader 
 | Command | Purpose |
 |---------|---------|
 | `:Nvim2Setup` | Detect project language fingerprints, propose Mason installs, and optionally install missing tools. |
-| `:Nvim2Doctor` | Run `:checkhealth`, lazy.nvim health, and refresh Mason registry for troubleshooting. |
+| `:Nvim2Doctor` | Open a floating report summarizing providers, formatters, and debug adapter prerequisites. |
 | `:Nvim2Profile` | Switch between Minimal / Full-IDE / Writing profiles (writes `prefs.local.lua`, runs `:Lazy sync`). |
 | `:Nvim2Keys` | Open the which-key/Telescope keymap browser. |
 
@@ -130,6 +167,27 @@ Invoke `:Nvim2Keys` anytime or use the table below as a quick reference. Leader 
 * Formatting by [conform.nvim](lua/lsp/formatting.lua): black/isort, goimports/gofumpt, stylua, biome/prettierd, rustfmt, taplo, shfmt, clang-format, terraform_fmt, yamlfmt, markdownlint, etc.
 * Linting by [nvim-lint](lua/lsp/linting.lua): ruff, markdownlint, yamllint (triggered on write/leave insert).
 * DAP via [`lua/dap/init.lua`](lua/dap/init.lua) with Mason-managed adapters: debugpy, js-debug, delve; dap-ui auto-opens, keymaps under `<leader>d*`.
+
+### External tooling cheatsheet
+
+| Tool | Purpose | Install command |
+|------|---------|-----------------|
+| `stylua` | Lua formatter | `:MasonInstall stylua` |
+| `black` | Python formatter | `:MasonInstall black` |
+| `isort` | Python import sorter | `:MasonInstall isort` |
+| `prettierd` | JS/TS formatter daemon | `:MasonInstall prettierd` |
+| `prettier` | JS/TS formatter (CLI) | `npm install -g prettier` |
+| `biome` | JS/TS formatter/linter | `:MasonInstall biome` (requires Node.js) |
+| `markdownlint` | Markdown linter/formatter | `:MasonInstall markdownlint` |
+| `taplo` | TOML formatter | `:MasonInstall taplo` |
+| `gofumpt` | Go formatter | `go install mvdan.cc/gofumpt@latest` |
+| `goimports` | Go import organizer | `go install golang.org/x/tools/cmd/goimports@latest` |
+| `rustfmt` | Rust formatter | `rustup component add rustfmt` |
+| `shfmt` | Shell formatter | `:MasonInstall shfmt` |
+| `yamlfmt` | YAML formatter | `go install github.com/google/yamlfmt/cmd/yamlfmt@latest` |
+| `terraform` | Terraform fmt provider | `brew install terraform` or `choco install terraform` |
+| `clang-format` | C/C++ formatter | `:MasonInstall clang-format` |
+
 
 ## Testing & Debugging Workflows
 
@@ -144,7 +202,7 @@ Activating the **Writing** profile enables Zen-mode, Twilight, markdown-friendly
 ## Performance
 
 * Startup measurements captured via `nvim --startuptime /tmp/nvim.startup.txt -c qa`. The most recent run clocked at **61.26 ms** (see `/tmp/nvim.startup.txt` artifact during CI).
-* Treesitter installations are managed lazily; run `:TSInstall <language>` manually if parsers fail to download (documented in `:Nvim2Doctor`).
+* Treesitter installations are managed lazily; run `:TSInstall <language>` manually if parsers fail to download (see `:Nvim2Doctor` for toolchain hints).
 
 ## Continuous Integration
 
@@ -159,7 +217,7 @@ Activating the **Writing** profile enables Zen-mode, Twilight, markdown-friendly
 
 ## Troubleshooting
 
-* Run `:Nvim2Doctor` for a guided health report; Mason registry refreshes automatically.
+* Run `:Nvim2Doctor` for a floating summary of missing providers, formatters, and DAP adapters (with install hints).
 * `lazy-lock.json` pins every plugin for reproducible installs. Regenerate via `:Lazy sync` after intentional updates.
 * Remote clipboard issues? Ensure `prefs.osc52 = true` and that your terminal supports OSC52.
 * If Treesitter parsers fail to compile in CI, install manually with `:TSInstall <lang>`.

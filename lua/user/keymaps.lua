@@ -43,7 +43,7 @@ function M.setup()
       vim.notify("Trouble not available", vim.log.levels.WARN)
     end
   end, "Toggle Trouble")
-  map("n", "<leader>q", vim.diagnostic.setloclist, "Populate loclist with diagnostics")
+  map("n", "<leader>xq", vim.diagnostic.setloclist, "Send diagnostics to loclist")
 
   map("n", "[d", vim.diagnostic.goto_prev, "Previous diagnostic")
   map("n", "]d", vim.diagnostic.goto_next, "Next diagnostic")

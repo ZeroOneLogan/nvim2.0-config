@@ -19,6 +19,7 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 local prefs = require("user.prefs")
+require("user.providers").setup()
 require("user.profile").apply_startup(prefs.values.profile)
 
 require("user.options").setup()
@@ -27,6 +28,7 @@ require("user.autocmds").setup()
 require("lazy").setup("plugins", {
   defaults = { lazy = true, version = false },
   install = { colorscheme = { "catppuccin", "tokyonight", "habamax" } },
+  rocks = { enabled = false, hererocks = false },
   change_detection = { notify = false },
   checker = { enabled = false },
   performance = {

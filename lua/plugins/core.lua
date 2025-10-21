@@ -8,18 +8,22 @@ return {
     event = "VeryLazy",
     opts = {
       plugins = { spelling = true },
-      window = { border = "rounded" },
-      triggers = "auto",
+      win = { border = "rounded" },
+      triggers = {
+        { "<leader>", mode = "n" },
+        { "<leader>", mode = "v" },
+      },
     },
     config = function(_, opts)
       local wk = require("which-key")
       wk.setup(opts)
-      wk.register({
-        ["<leader>f"] = { name = "+find" },
-        ["<leader>g"] = { name = "+git" },
-        ["<leader>t"] = { name = "+test" },
-        ["<leader>d"] = { name = "+debug" },
-        ["<leader>u"] = { name = "+ui" },
+      wk.add({
+        { "<leader>d", group = "debug" },
+        { "<leader>f", group = "find" },
+        { "<leader>g", group = "git" },
+        { "<leader>t", group = "test" },
+        { "<leader>u", group = "ui" },
+        { "<leader>x", group = "diagnostics" },
       })
     end,
   },
