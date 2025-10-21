@@ -30,6 +30,9 @@ local defaults = {
   statuscol = false,
   transparency = 0,
   diagnostics_virtual_text = true,
+  ui = {
+    smear_cursor = true,
+  },
   format_on_save = true,
   providers = {
     python = false,
