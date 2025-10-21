@@ -1,146 +1,173 @@
 # nvim2.0-config
 
-nvim2.0-config is a batteries-included yet lightweight Neovim 0.9+ configuration tuned for daily engineering work. It delivers first-class language support, ergonomic navigation, tasteful UI polish, and integrated tooling so you can focus on shipping code.
+Personalized all-in-one Neovim configuration targeting Neovim **0.11.4**. The goal is a fast, reliable IDE experience with batteries included while keeping personalization easy via a single preferences module.
 
 ## Quickstart
 
-1. **Backup** your existing config (mandatory):
+1. **Backup existing config** (recommended):
    ```bash
    mv ~/.config/nvim ~/.config/nvim.bak-$(date +%Y%m%d-%H%M)
    ```
-2. **Clone** this repository:
+2. **Clone** this repository into `~/.config/nvim`:
    ```bash
-   git clone git@github.com:ZeroOneLogan/nvim2.0-config.git ~/.config/nvim
+   git clone https://github.com/ZeroOneLogan/nvim2.0-config ~/.config/nvim
    ```
-3. **Launch** Neovim:
-   ```bash
-   nvim
-   ```
-   The first start bootstraps [`lazy.nvim`](https://github.com/folke/lazy.nvim) and installs plugins.
-4. **Install tooling** from inside Neovim:
-   - Run `:Lazy` then press `U` to update/pin plugins.
-   - Run `:Mason` and install any highlighted tools.
+3. **Launch Neovim**. The first start will bootstrap [lazy.nvim](https://github.com/folke/lazy.nvim) and install pinned plugins from `lazy-lock.json`.
+4. Run `:Nvim2Setup` to let the onboarding assistant recommend language servers, formatters, linters, and debuggers based on project files.
+5. Use `:Nvim2Keys` for a discoverable in-editor keymap cheatsheet.
 
-## Highlights
+> Subsequent startups should settle around ~80 ms on typical hardware (see [performance](#performance)).
 
-- Fast startup (<80 ms after first sync) thanks to granular lazy-loading.
-- Toggleable IDE surface: bufferline, statusline, diagnostics list, integrated terminal, tree explorer, outline via Telescope, DAP UI.
-- Tasteful defaults with Catppuccin/Tokyo Night themes, Noice command line, which-key hints, and compact notifications.
-- Language-smart editing: Treesitter, LSP, completion, snippets, format-on-save via conform, lint-on-save via nvim-lint.
-- Debugging with nvim-dap, DAP UI, and automatic adapter management (Python, Node/JS/TS, Go).
-- Session persistence, TODO highlights, and Git tooling (gitsigns, Telescope pickers, Fugitive).
+## Feature Overview
 
-## Keymaps Cheat-Sheet
+| Area          | Highlights |
+|---------------|------------|
+| UI            | Catppuccin / Tokyo Night themes, lualine, bufferline, noice + notify, todo-comments, optional Alpha dashboard |
+| Navigation    | Telescope + fzf-native, project-aware file switching, Neo-tree or Nvim-tree (configurable), Aerial outline |
+| Editing       | Treesitter + textobjects, context-aware commenting, surround, autopairs, cmp + luasnip, indent guides |
+| LSP & Tools   | Mason-managed servers, conform.nvim formatting, nvim-lint for gaps, diagnostics tuned with custom signs |
+| Git           | gitsigns, fugitive commands, Telescope git pickers |
+| Debugging     | nvim-dap + dap-ui + virtual text, Mason auto-install adapters (python, js, go) |
+| Testing       | neotest with python/jest/go adapters (guarded by profile) |
+| Terminal      | toggleterm with floating terminals, OSC52 remote clipboard integration |
+| Sessions      | persistence.nvim for last-session restore, project.nvim for root switching |
+| Writing Mode  | Zen-mode, Twilight, markdown ergonomics |
+| Utilities     | Which-key groups, :Nvim2Setup onboarding, :Nvim2Doctor health checks, :Nvim2Profile profile switcher |
 
-Leader = `<Space>`
+## Profiles & Preferences
 
-### Core navigation
-- `<leader>ff` – Telescope find files
-- `<leader>fg` – Live grep project
-- `<leader>fb` – Switch buffers
-- `<leader>fr` – Recent files
-- `<leader>fh` – Help tags
-- `<leader>e` – Toggle Neo-tree explorer
-- `<leader>fe` – Focus explorer
-- `<leader>tt` – Toggle floating terminal
-- `<leader>xx` – Trouble diagnostics toggle
-- `[d` / `]d` – Prev/next diagnostic
+Configuration defaults live in [`lua/user/prefs.lua`](lua/user/prefs.lua); overrides are written to the git-ignored `lua/user/prefs.local.lua` (created on first save). Use `:Nvim2Profile` to switch presets or edit either file directly—changes refresh plugins automatically.
 
-### LSP & code actions
-- `gd` / `gD` / `gi` / `gr` – Definition / Declaration / Implementation / References
-- `K` – Hover docs
-- `<leader>rn` – Rename symbol
-- `<leader>ca` – Code actions (normal/visual)
-- `<leader>lf` – Format buffer (conform)
-- `<leader>ls` – Signature help
+Default preference table:
 
-### Git (gitsigns + fugitive)
-- `<leader>gg` – Fugitive status
-- `<leader>gs` – Stage hunk
-- `<leader>gr` – Reset hunk
-- `<leader>gS` – Stage buffer
-- `<leader>gp` – Preview hunk
-- `<leader>gb` – Blame line
-- `]c` / `[c` – Next/prev hunk
+```lua
+{
+  theme = "catppuccin",
+  profile = "Full-IDE",
+  osc52 = true,
+  explorer = "neo-tree",
+  outline = true,
+  tests = true,
+  ai = false,
+  alpha = false,
+  project = true,
+  ufo = true,
+  statuscol = false,
+  transparency = 0,
+  diagnostics_virtual_text = true,
+  format_on_save = true,
+}
+```
 
-### Debugging (nvim-dap)
-- `<F5>` / `<F10>` / `<F11>` / `<F12>` – Continue / Step over / Step into / Step out
-- `<leader>db` – Toggle breakpoint
-- `<leader>dB` – Conditional breakpoint
-- `<leader>dr` – Toggle REPL
-- `<leader>du` – Toggle DAP UI
+### Profile presets
 
-### Sessions
-- `<leader>qs` – Restore session
-- `<leader>ql` – Restore last session
-- `<leader>qd` – Disable session save for current dir
+| Profile    | Description |
+|------------|-------------|
+| **Minimal** | Core editing, LSP basics, Telescope, no DAP/tests/outline/UFO. |
+| **Full-IDE** | Everything enabled: DAP, neotest, outline, project/session helpers. |
+| **Writing** | Markdown-first: Zen-mode, Twilight, spell/wrap defaults, coding extras trimmed. |
 
-## Plugin Stack
+Switch profiles via `:Nvim2Profile` (interactive prompt) or editing `prefs.local.lua`. The command rewrites the overrides file and runs `:Lazy sync` to enable/disable guarded plugins automatically.
 
-| Area | Plugins |
-| ---- | ------- |
-| Theme & UI | `catppuccin`, `tokyonight`, `lualine`, `bufferline`, `noice`, `nvim-notify`, `dressing`, `which-key`, `indent-blankline`, `nvim-web-devicons` |
-| Navigation | `telescope` (+fzf-native), `neo-tree`, `treesitter` |
-| Editing | `nvim-cmp`, `LuaSnip`, `friendly-snippets`, `nvim-autopairs`, `nvim-surround`, `Comment.nvim` |
-| Git | `gitsigns.nvim`, `vim-fugitive` |
-| Diagnostics & Tools | `trouble.nvim`, `todo-comments`, `toggleterm`, `persistence.nvim`, `conform.nvim`, `nvim-lint` |
-| LSP | `mason.nvim`, `mason-lspconfig`, `mason-tool-installer`, `nvim-lspconfig`, `schemastore`, `neodev`, `fidget.nvim`, `rust-tools`, `nvim-jdtls` |
-| Debugging | `nvim-dap`, `nvim-dap-ui`, `mason-nvim-dap`, `nvim-dap-virtual-text` |
+### Tweaking preferences
 
-## Language Support Matrix
+* `theme`: `"catppuccin"` or `"tokyonight"` (fallback to `habamax` if unavailable).
+* `explorer`: `"neo-tree"` or `"nvim-tree"`.
+* `outline`: toggles Aerial.
+* `tests`: toggles neotest adapters and mappings.
+* `ai`: reserved for future AI helpers (see [`lua/ai/init.lua`](lua/ai/init.lua)).
+* `project`: toggles project.nvim and Telescope projects extension.
+* `ufo`: enables advanced folds via nvim-ufo.
+* `format_on_save`: integrates with conform.nvim for full-buffer formatting (per-language toolchain configured in [`lua/lsp/formatting.lua`](lua/lsp/formatting.lua)).
 
-| Language | LSP | Formatter | Linter |
-| -------- | --- | --------- | ------ |
-| Lua | `lua_ls` | `stylua` | `selene` |
-| Python | `pyright` + `ruff` | `isort` + `black` | `ruff` |
-| JavaScript / TypeScript | `tsserver` | `prettierd`/`prettier`/`biome` | `eslint_d` |
-| Go | `gopls` | `gofumpt` + `goimports` | `golangci-lint` |
-| Rust | `rust_analyzer` (via rust-tools) | `rustfmt` | `clippy` via rust-analyzer |
-| Ruby | `solargraph` | `rubocop` | `rubocop` |
-| PHP | `intelephense` | `prettierd` | `intelephense` |
-| YAML | `yamlls` | `prettierd` | `yamllint` |
-| JSON | `jsonls` (with schema store) | `prettierd` | `jsonls` |
-| Markdown | `marksman` | `prettierd` / `markdownlint` | `markdownlint` |
-| Docker | `dockerls`, `docker_compose_language_service` | `prettierd` | `docker` LSP |
-| Terraform | `terraformls` | `terraform` fmt (via LSP) | `terraformls` |
-| Kotlin / Java | `kotlin_language_server`, `jdtls` | LSP | LSP |
+## Keymaps Cheat Sheet
 
-> Mason ensures all listed servers and formatters are available; open `:Mason` to install extras on demand.
+Invoke `:Nvim2Keys` anytime or use the table below as a quick reference. Leader is `<Space>`, localleader is `,`.
 
-## Debugging Presets
+| Mapping | Mode | Action |
+|---------|------|--------|
+| `<leader>ff` | Normal | Telescope find files |
+| `<leader>fg` | Normal | Telescope live grep |
+| `<leader>fb` | Normal | Telescope buffers |
+| `<leader>fh` | Normal | Telescope help tags |
+| `<leader>e`  | Normal | Toggle file explorer |
+| `<leader>o`  | Normal | Toggle Aerial outline |
+| `<leader>xx` | Normal | Toggle Trouble diagnostics list |
+| `<leader>q`  | Normal | Populate loclist with diagnostics |
+| `[d` / `]d` | Normal | Previous/next diagnostic |
+| `gd` / `gD` | Normal | LSP definition / declaration |
+| `gr` / `gi` | Normal | LSP references / implementation |
+| `K`         | Normal | Hover documentation |
+| `<leader>rn` | Normal | Rename symbol |
+| `<leader>ca` | Normal/Visual | Code actions |
+| `<leader>f`  | Normal | Format (conform.nvim) |
+| `<leader>gs` | Normal | Git stage hunk (gitsigns) |
+| `<leader>gr` | Normal | Git reset hunk |
+| `<leader>gp` | Normal | Git preview hunk |
+| `<leader>gb` | Normal | Git blame line |
+| `<leader>tt` | Normal | Toggle floating terminal |
+| `<leader>db` | Normal | Toggle breakpoint (DAP) |
+| `<leader>dc` / `<leader>do` / `<leader>di` | Normal | Continue / Step over / Step into |
+| `<leader>du` | Normal | Toggle DAP UI |
+| `<leader>tn` / `<leader>tf` | Normal | Run nearest / file tests (neotest) |
+| `<leader>ts` / `<leader>to` | Normal | Toggle test summary / open output |
+| `<leader>up` | Normal | Open preferences (creates `prefs.local.lua` on save) |
+| Terminal `<Esc>` | Terminal | Exit terminal mode |
 
-- **Python** – Launch current file via `debugpy` in integrated terminal.
-- **Node/JS/TS** – Use `js-debug-adapter` (`pwa-node`) to launch or attach to processes.
-- **Go** – Managed by `delve`; `:MasonInstall delve` if missing.
-- The DAP UI opens automatically when a session starts and closes on stop.
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `:Nvim2Setup` | Detect project language fingerprints, propose Mason installs, and optionally install missing tools. |
+| `:Nvim2Doctor` | Run `:checkhealth`, lazy.nvim health, and refresh Mason registry for troubleshooting. |
+| `:Nvim2Profile` | Switch between Minimal / Full-IDE / Writing profiles (writes `prefs.local.lua`, runs `:Lazy sync`). |
+| `:Nvim2Keys` | Open the which-key/Telescope keymap browser. |
+
+## LSP, Formatting & Linting
+
+* Language servers configured via [`lua/lsp/init.lua`](lua/lsp/init.lua) with per-server overrides in `lua/lsp/servers/`.
+* Mason + mason-tool-installer ensure the following core tools: bashls, clangd, cssls, dockerls, gopls, html, jdtls, jsonls, kotlin, lua_ls, marksman, pyright, ruff-lsp/ruff, rust-analyzer, tailwindcss, taplo, tsserver, yamlls, eslint, intelephense, terraformls.
+* Formatting by [conform.nvim](lua/lsp/formatting.lua): black/isort, goimports/gofumpt, stylua, biome/prettierd, rustfmt, taplo, shfmt, clang-format, terraform_fmt, yamlfmt, markdownlint, etc.
+* Linting by [nvim-lint](lua/lsp/linting.lua): ruff, markdownlint, yamllint (triggered on write/leave insert).
+* DAP via [`lua/dap/init.lua`](lua/dap/init.lua) with Mason-managed adapters: debugpy, js-debug, delve; dap-ui auto-opens, keymaps under `<leader>d*`.
+
+## Testing & Debugging Workflows
+
+* Neotest adapters for Python (`pytest`/`unittest`), Jest/Vitest, and Go.
+* Toggle tests within `<leader>t*` groups; summary panel and output windows for quick inspection.
+* DAP UI toggled with `<leader>du`; breakpoints, stepping, evaluation through nvim-dap.
+
+## Writing Profile Extras
+
+Activating the **Writing** profile enables Zen-mode, Twilight, markdown-friendly options (`wrap`, `conceallevel`, spell checking) and keeps the interface distraction-free while retaining Telescope and key productivity tools.
 
 ## Performance
 
-Collect a startup timing snapshot after initial sync:
-```bash
-nvim --startuptime /tmp/nvim.startup.txt -c qa
-```
-Inspect `/tmp/nvim.startup.txt` for hot spots; typical cold starts land around 60–80 ms on Apple Silicon.
+* Startup measurements captured via `nvim --startuptime /tmp/nvim.startup.txt -c qa`. The most recent run clocked at **61.26 ms** (see `/tmp/nvim.startup.txt` artifact during CI).
+* Treesitter installations are managed lazily; run `:TSInstall <language>` manually if parsers fail to download (documented in `:Nvim2Doctor`).
+
+## Continuous Integration
+
+[`health.yml`](.github/workflows/health.yml) runs on Ubuntu with Neovim 0.11.x. The workflow caches plugin downloads, bootstraps the config, runs headless health checks (`:checkhealth`, `:Lazy sync`), and stores the startup time log as an artifact.
+
+## How to add a language
+
+1. **Install tools**: add Mason package names to `ensure_installed` in [`lua/plugins/lsp.lua`](lua/plugins/lsp.lua) or run `:MasonInstall tool-name`.
+2. **Add/adjust LSP server**: extend the `servers` table in [`lua/lsp/init.lua`](lua/lsp/init.lua) and provide per-server settings under `lua/lsp/servers/<name>.lua` as needed.
+3. **Formatter/Linter**: update [`lua/lsp/formatting.lua`](lua/lsp/formatting.lua) and [`lua/lsp/linting.lua`](lua/lsp/linting.lua) with conform/nvim-lint entries.
+4. **Optional DAP/Test adapters**: configure via [`lua/dap/init.lua`](lua/dap/init.lua) and [`lua/plugins/tests.lua`](lua/plugins/tests.lua).
 
 ## Troubleshooting
 
-- **Bootstrap failures**: ensure Git and a C compiler (for telescope-fzf) are installed, then rerun `:Lazy sync`.
-- **Language tools missing**: open `:Mason`, install highlighted packages, or run `:MasonInstall <tool>`.
-- **Java projects**: install `jdtls` system-wide or via Mason and ensure `JAVA_HOME` is set for Lombok support.
-- **Formatter conflicts**: toggle format-on-save per buffer with `:ConformDisable` / `:ConformEnable`.
-- **DAP issues**: run `:MasonInstall debugpy js-debug-adapter delve` and restart Neovim.
-- **Health checks**: `:checkhealth` reports missing system deps (node, go, python3) used by external tooling.
+* Run `:Nvim2Doctor` for a guided health report; Mason registry refreshes automatically.
+* `lazy-lock.json` pins every plugin for reproducible installs. Regenerate via `:Lazy sync` after intentional updates.
+* Remote clipboard issues? Ensure `prefs.osc52 = true` and that your terminal supports OSC52.
+* If Treesitter parsers fail to compile in CI, install manually with `:TSInstall <lang>`.
 
-## Acceptance Checklist
+## Contributing / Next Steps
 
-- [ ] `nvim --headless "+lua print('NVIM OK')" +qa`
-- [ ] `nvim --headless "+lua require('lazy').sync()" +qa`
-- [ ] `nvim --headless "+MasonUpdate" +qa`
-- [ ] `nvim --headless "+checkhealth" +qa`
-- [ ] `nvim --startuptime /tmp/nvim.startup.txt -c qa`
-- [ ] Open project → confirm LSP attach (`:LspInfo`), format-on-save, Telescope pickers, Neo-tree toggle, Trouble, DAP UI.
+* Explore additional language-specific test runners or DAP adapters.
+* Integrate an optional AI assistant once an API key management strategy is settled (`lua/ai/init.lua` stub is ready).
+* Add markdown preview or Obsidian integration guarded by the Writing profile.
 
-## Changelog
-
-### 2.0.0
-- Initial release of nvim2.0-config: modular lazy.nvim setup, curated plugin stack, language tooling, DAP, and documentation.
+Happy hacking! 🎉

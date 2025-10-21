@@ -5,207 +5,86 @@ local servers = {
   clangd = {},
   cssls = {},
   dockerls = {},
-  docker_compose_language_service = {},
-  gopls = {
-    settings = {
-      gopls = {
-        gofumpt = true,
-        analyses = { unusedparams = true },
-        staticcheck = true,
-      },
-    },
-  },
+  gopls = {},
   html = {},
   jdtls = {},
-  jsonls = {
-    settings = {
-      json = {
-        schemas = require("schemastore").json.schemas(),
-        validate = { enable = true },
-      },
-    },
-  },
+  jsonls = require("lsp.servers.jsonls"),
   kotlin_language_server = {},
-  lua_ls = {
-    settings = {
-      Lua = {
-        completion = { callSnippet = "Replace" },
-        diagnostics = { globals = { "vim" } },
-        workspace = {
-          checkThirdParty = false,
-          library = {
-            vim.env.VIMRUNTIME,
-            "${3rd}/luv/library",
-          },
-        },
-      },
-    },
-  },
+  lua_ls = require("lsp.servers.lua_ls"),
   marksman = {},
   pyright = {},
-  ruff = {},
-  rust_analyzer = {
-    settings = {
-      ['rust-analyzer'] = {
-        cargo = { allFeatures = true },
-        checkOnSave = { command = "clippy" },
-      },
-    },
-  },
-  solargraph = {},
+  ruff_lsp = require("lsp.servers.ruff_lsp"),
+  rust_analyzer = require("lsp.servers.rust_analyzer"),
   tailwindcss = {},
   taplo = {},
-  tsserver = {},
+  tsserver = require("lsp.servers.tsserver"),
+  yamlls = require("lsp.servers.yamlls"),
   eslint = {},
   intelephense = {},
   terraformls = {},
-  vimls = {},
-  yamlls = {
-    settings = {
-      yaml = {
-        keyOrdering = false,
-        schemaStore = { enable = false, url = "" },
-        schemas = require("schemastore").yaml.schemas(),
-      },
-    },
-  },
 }
 
-local function setup_diagnostics()
-  local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
-  for type, icon in pairs(signs) do
-    local hl = "DiagnosticSign" .. type
-    vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
+local function get_capabilities()
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+  local ok, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
+  if ok then
+    capabilities = cmp_nvim_lsp.default_capabilities(capabilities)
   end
-  vim.diagnostic.config({
-    underline = true,
-    update_in_insert = false,
-    severity_sort = true,
-    virtual_text = { spacing = 4, prefix = "●" },
-  })
+  capabilities.textDocument.foldingRange = { dynamicRegistration = false, lineFoldingOnly = true }
+  return capabilities
 end
 
-local function on_attach(client, bufnr)
-  local map = require("core.util").map
-  local function buf_map(mode, lhs, rhs, desc)
-    map(mode, lhs, rhs, { buffer = bufnr, desc = desc })
+local function lsp_keymaps(bufnr)
+  local function map(mode, lhs, rhs, desc)
+    vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
   end
-
-  buf_map("n", "gd", vim.lsp.buf.definition, "Goto definition")
-  buf_map("n", "gD", vim.lsp.buf.declaration, "Goto declaration")
-  buf_map("n", "gr", vim.lsp.buf.references, "References")
-  buf_map("n", "gi", vim.lsp.buf.implementation, "Goto implementation")
-  buf_map("n", "K", vim.lsp.buf.hover, "Hover")
-  buf_map("n", "<leader>rn", vim.lsp.buf.rename, "Rename")
-  buf_map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "Code action")
-  buf_map("n", "<leader>lf", function() require("conform").format({ async = true }) end, "Format file")
-  buf_map("n", "<leader>ls", vim.lsp.buf.signature_help, "Signature help")
-  buf_map("n", "<leader>wa", vim.lsp.buf.add_workspace_folder, "Add workspace folder")
-  buf_map("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder, "Remove workspace folder")
-  buf_map("n", "<leader>wl", function() print(vim.inspect(vim.lsp.buf.list_workspace_folders())) end, "List workspace folders")
-
-  if client.server_capabilities.inlayHintProvider and vim.lsp.inlay_hint then
-    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
-  end
+  map("n", "gd", vim.lsp.buf.definition, "Goto definition")
+  map("n", "gD", vim.lsp.buf.declaration, "Goto declaration")
+  map("n", "gr", vim.lsp.buf.references, "Goto references")
+  map("n", "gi", vim.lsp.buf.implementation, "Goto implementation")
+  map("n", "K", vim.lsp.buf.hover, "Hover")
+  map("n", "<leader>rn", vim.lsp.buf.rename, "LSP rename")
+  map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "Code action")
+  map("n", "<leader>f", function()
+    require("conform").format({ async = true })
+  end, "Format buffer")
+  map("n", "<leader>ds", vim.diagnostic.open_float, "Line diagnostics")
 end
 
-local function capabilities()
-  local caps = vim.lsp.protocol.make_client_capabilities()
-  local cmp_ok, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
-  if cmp_ok then
-    caps = cmp_nvim_lsp.default_capabilities(caps)
+function M.on_attach(client, bufnr)
+  lsp_keymaps(bufnr)
+  if client.server_capabilities.inlayHintProvider then
+    pcall(vim.lsp.inlay_hint.enable, true, { bufnr = bufnr })
   end
-  caps.textDocument.foldingRange = {
-    dynamicRegistration = false,
-    lineFoldingOnly = true,
-  }
-  return caps
+  if client.server_capabilities.semanticTokensProvider and vim.lsp.semantic_tokens then
+    vim.lsp.semantic_tokens.start(bufnr, client.id)
+  end
 end
 
 function M.setup()
-  setup_diagnostics()
-
   require("mason").setup()
-  require("mason-tool-installer").setup({
-    ensure_installed = {
-      "stylua",
-      "black",
-      "isort",
-      "ruff",
-      "prettier",
-      "prettierd",
-      "eslint_d",
-      "biome",
-      "goimports",
-      "gofumpt",
-      "shfmt",
-      "rubocop",
-      "rustfmt",
-      "markdownlint",
-      "taplo",
-      "yamllint",
-      "selene",
-      "shellcheck",
-      "golangci-lint",
-      "debugpy",
-      "js-debug-adapter",
-      "delve",
-    },
-    auto_update = false,
-    run_on_start = true,
-  })
-
   local mason_lspconfig = require("mason-lspconfig")
-  mason_lspconfig.setup({
-    ensure_installed = {
-      "bashls",
-      "clangd",
-      "cssls",
-      "dockerls",
-      "gopls",
-      "html",
-      "jdtls",
-      "jsonls",
-      "kotlin_language_server",
-      "lua_ls",
-      "marksman",
-      "pyright",
-      "ruff",
-      "rust_analyzer",
-      "solargraph",
-      "tailwindcss",
-      "taplo",
-      "tsserver",
-      "vimls",
-      "yamlls",
-      "eslint",
-      "intelephense",
-      "terraformls",
-      "docker_compose_language_service",
-    },
-  })
+  mason_lspconfig.setup({ ensure_installed = vim.tbl_keys(servers) })
+
+  local capabilities = get_capabilities()
 
   mason_lspconfig.setup_handlers({
-    function(server)
-      local server_opts = servers[server] or {}
-      server_opts.capabilities = capabilities()
-      server_opts.on_attach = on_attach
-      require("lspconfig")[server].setup(server_opts)
+    function(server_name)
+      local opts = vim.tbl_deep_extend("force", {}, servers[server_name] or {})
+      opts.capabilities = vim.tbl_deep_extend("force", {}, capabilities, opts.capabilities or {})
+      local server_on_attach = opts.on_attach
+      opts.on_attach = function(client, bufnr)
+        if server_on_attach then
+          server_on_attach(client, bufnr)
+        end
+        M.on_attach(client, bufnr)
+      end
+      require("lspconfig")[server_name].setup(opts)
     end,
-    jdtls = function() end,
   })
 
-  -- Rust tools
-  if require("core.util").has("rust-tools.nvim") then
-    require("rust-tools").setup({
-      tools = { inlay_hints = { auto = true } },
-      server = {
-        on_attach = on_attach,
-        capabilities = capabilities(),
-        settings = servers.rust_analyzer.settings,
-      },
-    })
-  end
+  vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
+  vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
 end
 
 return M
