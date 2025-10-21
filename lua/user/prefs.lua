@@ -13,6 +13,12 @@ local defaults = {
   transparency = 0,
   diagnostics_virtual_text = true,
   format_on_save = true,
+  providers = {
+    python = false,
+    ruby = false,
+    python_host = nil,
+    ruby_host = nil,
+  },
 }
 
 local function persist_path()
